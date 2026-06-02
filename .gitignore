@@ -1,0 +1,6 @@
+node_modules/
+.DS_Store
+*.log
+
+# Note: dist/ is intentionally NOT ignored. The built bundle is committed
+# so jsDelivr can serve versioned releases from git tags.

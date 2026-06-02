@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>USP Search — Dev</title>
+  </head>
+  <body>
+    <!-- Host config (would be injected by PHP in production) -->
+    <script>
+      window.APP_CONFIG = { apiBase: "http://localhost:8080" };
+    </script>
+    <!-- Widget mount point -->
+    <div id="usp-search-root"></div>
+    <!-- Entry — Vite will inject the dev server bundle here -->
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "name": "usp-search-frontend",
+  "version": "0.1.0",
+  "description": "Standalone React widget for SearchApplication / BhaktiGanga Tinglish search. Builds to a single self-contained bundle for drop-in <script src> integration via jsDelivr.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.10.4",
+    "@emotion/styled": "^11.10.4",
+    "@mui/icons-material": "^5.10.6",
+    "@mui/lab": "^5.0.0-alpha.100",
+    "@mui/material": "^5.10.6",
+    "dateformat": "^5.0.3",
+    "mui-image": "^1.0.7",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^5.0.10",
+    "vite-plugin-css-injected-by-js": "^5.0.1"
+  }
+}
