@@ -77,8 +77,10 @@ function SearchComponent() {
   const fetchArticles = async () => {
     try {
       setError(null);
-      const baseUrl = `${API_BASE}/searchTemplate`;
-      const searchUrl = `${baseUrl}/${searchText.trim()}`;
+      // v0.2.0: query-parameter URL shape — works with the PHP proxy at
+      //   <apiBase>?query=<text>[&mode=poetry]
+      // Same-origin in prod (PHP serves the proxy), no CORS.
+      const searchUrl = `${API_BASE}?query=${encodeURIComponent(searchText.trim())}`;
       const response = await fetch(searchUrl);
       const data = await response.json();
 
@@ -103,12 +105,8 @@ function SearchComponent() {
   const fetchBhakthiGangaSongs = async () => {
     try {
       setError(null);
-      // Legacy PHP-served BhaktiGanga endpoint — kept as reference fallback.
-      // const baseUrl =
-      //   "https://www.universal-spirituality.org/elasticsearchDataWithTitle.php?queryString=";
-      // const searchUrl = `${baseUrl}${searchText.trim()}`;
-      const baseUrl = `${API_BASE}/searchPoetry`;
-      const searchUrl = `${baseUrl}/${searchText.trim()}`;
+      // v0.2.0: query-parameter URL shape with BG-mode flag.
+      const searchUrl = `${API_BASE}?query=${encodeURIComponent(searchText.trim())}&mode=poetry`;
       const response = await fetch(searchUrl);
       const data = await response.json();
 
