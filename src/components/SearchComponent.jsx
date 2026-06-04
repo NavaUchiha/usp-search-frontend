@@ -19,23 +19,59 @@ import {
   Skeleton,
   Snackbar,
   useMediaQuery,
-  Switch,
+  FormControl,
+  FormLabel,
+  RadioGroup,
+  Radio,
   FormControlLabel,
 } from "@mui/material";
 import Masonry from "@mui/lab/Masonry";
 
-// Runtime-configurable API base. Host (PHP template or static config.js)
-// can set:  window.APP_CONFIG = { apiBase: "https://..." }
-// BEFORE this bundle loads. Falls back to localhost for standalone dev.
+// Runtime-configurable API base + URL style. Host (PHP template or nginx
+// envsubst) sets BEFORE this bundle loads:
+//   window.APP_CONFIG = { apiBase: "...", apiStyle: "query" | "path" }
+//
+// The SAME bundle supports two integration shapes:
+//   "query" (DEFAULT): `${apiBase}?query=<text>[&mode=poetry|&mode=semantic]`
+//       For the PHP proxy (search_api_proxy.php), which reads $_GET['query'].
+//       Default so existing prod deployments that set only `apiBase` keep
+//       working without change.
+//   "path": `${apiBase}/searchTemplate/<text>`, `/searchPoetry/<text>`,
+//       `/searchSemantic/<text>`. For the same-origin nginx (search-ui) that
+//       reverse-proxies those paths to Spring Boot, and for hitting Spring
+//       Boot directly. Use apiBase="." (or "") for same-origin.
 const API_BASE =
   (typeof window !== "undefined" && window.APP_CONFIG && window.APP_CONFIG.apiBase) ||
   "http://localhost:8080";
+const API_STYLE =
+  (typeof window !== "undefined" && window.APP_CONFIG && window.APP_CONFIG.apiStyle) ||
+  "query";
+
+// Map a logical search mode to its Spring endpoint / proxy flag.
+//   "normal"   -> lexical search      (/searchTemplate)
+//   "semantic" -> kNN vector search   (/searchSemantic; needs embed-service)
+//   "poetry"   -> BhaktiGanga search  (/searchPoetry)
+const MODE_PATH = { normal: "searchTemplate", semantic: "searchSemantic", poetry: "searchPoetry" };
+
+// Build the search URL for the configured style. Trailing slashes on apiBase
+// are normalized so ".", "", "http://host:8080" and "http://host:8080/" all
+// behave.
+function buildSearchUrl(searchText, mode) {
+  const text = encodeURIComponent(searchText.trim());
+  if (API_STYLE === "query") {
+    const modeParam = mode === "normal" ? "" : `&mode=${mode}`;
+    return `${API_BASE}?query=${text}${modeParam}`;
+  }
+  const base = API_BASE.replace(/\/+$/, "");
+  return `${base}/${MODE_PATH[mode] || MODE_PATH.normal}/${text}`;
+}
 
 function SearchComponent() {
   const [searchText, setSearchText] = React.useState("");
   const [listOfWrappedArticles, setListOfWrappedArticles] = useState([]);
   const [error, setError] = React.useState(null);
-  const [enabled, setEnabled] = useState(false);
+  // "normal" | "semantic" | "poetry"
+  const [searchMode, setSearchMode] = useState("normal");
 
   const onSearchTextChangeHandler = (event) => {
     setSearchText(event.target.value);
@@ -55,11 +91,7 @@ function SearchComponent() {
       return;
     }
     setListOfWrappedArticles([]);
-    if (enabled) {
-      fetchBhakthiGangaSongs();
-    } else {
-      fetchArticles();
-    }
+    fetchResults(searchMode);
     setError(null);
   };
 
@@ -74,39 +106,12 @@ function SearchComponent() {
     }
   };
 
-  const fetchArticles = async () => {
+  const fetchResults = async (mode) => {
     try {
       setError(null);
-      // v0.2.0: query-parameter URL shape — works with the PHP proxy at
-      //   <apiBase>?query=<text>[&mode=poetry]
-      // Same-origin in prod (PHP serves the proxy), no CORS.
-      const searchUrl = `${API_BASE}?query=${encodeURIComponent(searchText.trim())}`;
-      const response = await fetch(searchUrl);
-      const data = await response.json();
-
-      if (!response.ok) {
-        if (data.status === 400) {
-          setError("No Articles Found. Please modify search query");
-        } else {
-          setError(
-            "Something went wrong. Please try again later or change search query."
-          );
-        }
-        setListOfWrappedArticles([]);
-        return;
-      }
-      setListOfWrappedArticles(data["listOfWrappedArticles"]);
-    } catch (err) {
-      setError("Server is unreachable. Please contact administrator.");
-      setListOfWrappedArticles([]);
-    }
-  };
-
-  const fetchBhakthiGangaSongs = async () => {
-    try {
-      setError(null);
-      // v0.2.0: query-parameter URL shape with BG-mode flag.
-      const searchUrl = `${API_BASE}?query=${encodeURIComponent(searchText.trim())}&mode=poetry`;
+      // URL shape depends on APP_CONFIG.apiStyle (query for the PHP proxy,
+      // path for the same-origin nginx / direct Spring). See buildSearchUrl.
+      const searchUrl = buildSearchUrl(searchText, mode);
       const response = await fetch(searchUrl);
       const data = await response.json();
 
@@ -212,19 +217,19 @@ function SearchComponent() {
             >
               Search
             </Button>
-            <FormControlLabel
-              sx={{
-                alignSelf: "flex-end",
-                marginRight: 0,
-              }}
-              control={
-                <Switch
-                  checked={enabled}
-                  onChange={(e) => setEnabled(e.target.checked)}
-                />
-              }
-              label="Search Bhakthi Ganga Songs"
-            />
+            <FormControl sx={{ alignSelf: "flex-end", marginRight: 0 }}>
+              <FormLabel id="search-mode-label">Search mode</FormLabel>
+              <RadioGroup
+                row
+                aria-labelledby="search-mode-label"
+                value={searchMode}
+                onChange={(e) => setSearchMode(e.target.value)}
+              >
+                <FormControlLabel value="normal" control={<Radio />} label="Normal" />
+                <FormControlLabel value="semantic" control={<Radio />} label="Semantic" />
+                <FormControlLabel value="poetry" control={<Radio />} label="Bhakthi Ganga" />
+              </RadioGroup>
+            </FormControl>
           </Stack>
         </Stack>
         <Stack justifyContent="center" alignItems="center" sx={{ mx: "5%" }}>

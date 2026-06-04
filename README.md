@@ -40,10 +40,23 @@ URLs aggressively; tags give you predictable cache busting).
 
 ## Runtime config (`window.APP_CONFIG`)
 
-| Key         | Required | Description                                                                 |
-|-------------|----------|-----------------------------------------------------------------------------|
-| `apiBase`   | Yes      | Spring Boot base URL. Widget appends `/searchTemplate/...` etc.             |
-| `heroImage` | No       | Absolute URL for the hero image. If omitted, no image is rendered.          |
+| Key         | Required | Description                                                                                  |
+|-------------|----------|----------------------------------------------------------------------------------------------|
+| `apiBase`   | Yes      | Base URL the widget calls. Exact meaning depends on `apiStyle` (see below).                   |
+| `apiStyle`  | No       | `"query"` (default) or `"path"`. Selects the URL shape. Default keeps existing PHP-proxy deployments working unchanged. |
+| `heroImage` | No       | Absolute URL for the hero image. If omitted, no image is rendered.                            |
+
+### `apiStyle` — two integration shapes from one bundle
+
+| `apiStyle` | URL the widget builds                                                                | Use with                                                                                  |
+|------------|--------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
+| `"query"`  | `${apiBase}?query=<text>[&mode=poetry\|&mode=semantic]`                               | The PHP proxy (`search_api_proxy.php`) that reads `$_GET['query']`.                        |
+| `"path"`   | `${apiBase}/searchTemplate/<text>`, `/searchPoetry/<text>`, `/searchSemantic/<text>` | A same-origin nginx reverse-proxying those paths to Spring Boot, or Spring Boot directly. Use `apiBase: "."` for same-origin. |
+
+The **Search mode** radio picks the route: **Normal** (`/searchTemplate`, lexical),
+**Semantic** (`/searchSemantic`, kNN vector search — requires the embed-service to be running),
+and **Bhakthi Ganga** (`/searchPoetry`). In `"query"` style these map to the `mode=` flag, which
+the proxy must understand.
 
 ## Manual mounting
 
