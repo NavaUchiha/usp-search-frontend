@@ -23,32 +23,33 @@ function replaceSpecialCharacters(str) {
   return result;
 }
 
+// Build the canonical article URL. Pure function so the same value can be
+// used as the anchor's real `href` (enabling native right-click / middle-click
+// / Cmd-click "open in new tab") instead of being computed only inside a click
+// handler.
+function buildArticleUrl(article) {
+  const title = replaceSpecialCharacters(article.title);
+  const masterId = article.masterId;
+  const tableId = article.tableId;
+  const entryType = article.entryType;
+  const language = article.language;
+  // TODO Once titleInEng is available from server, use it to populate instead of language
+  const titleInEng =
+    article.titleInEng === undefined || article.titleInEng === ''
+      ? language
+      : article.titleInEng;
+
+  if (entryType !== 'poetry' && entryType !== 'qa') {
+    return `https://universal-spirituality.org/${entryType}s/${title}--${tableId}--${masterId}--${titleInEng}`;
+  } else if (entryType === 'qa') {
+    return `https://universal-spirituality.org/${entryType}s/${title}--${tableId}--${masterId}`;
+  }
+  return `https://universal-spirituality.org/bhaktiGanga/${tableId}--${title}`;
+}
+
 function ArticleCard({ article, score, highlight }) {
   let dateDelivered = dateFormat(article.dateDelivered, 'fullDate')
-  const populateArticleHTMLPage = function(event) {
-    event.preventDefault()
-    let title = replaceSpecialCharacters(article.title);
-    let masterId = article.masterId;
-    let tableId = article.tableId;
-    let entryType = article.entryType;
-    let language = article.language;
-    // TODO Once titleInEng is available from server , use it to populate instead of language
-    if (article.titleInEng === undefined || article.titleInEng === '') {
-      article.titleInEng = language;
-    }
-    if (entryType !== 'poetry' && entryType !== 'qa') {
-      var url = `https://universal-spirituality.org/${entryType}s/${title}--${tableId}--${masterId}--${article.titleInEng}`;
-      window.open(url, '_blank');
-    }
-    else if (entryType === 'qa') {
-      var url = `https://universal-spirituality.org/${entryType}s/${title}--${tableId}--${masterId}`
-      window.open(url, '_blank');
-    }
-    else {
-      var url = `https://universal-spirituality.org/bhaktiGanga/${tableId}--${title}`;
-      window.open(url, '_blank');
-    }
-  }
+  const articleUrl = buildArticleUrl(article);
   return (
     <React.Fragment>
       <Card elevation={6}>
@@ -83,7 +84,7 @@ function ArticleCard({ article, score, highlight }) {
           </Typography>
         </CardContent>
         <CardActions>
-          <Link href="#" onClick={populateArticleHTMLPage}>
+          <Link href={articleUrl} target="_blank" rel="noopener noreferrer">
             Read More
           </Link>
         </CardActions>

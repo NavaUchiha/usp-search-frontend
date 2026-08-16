@@ -1,6 +1,6 @@
 {
   "name": "usp-search-frontend",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Standalone React widget for SearchApplication / BhaktiGanga Tinglish search. Builds to a single self-contained bundle for drop-in <script src> integration via jsDelivr.",
   "type": "module",
   "scripts": {
