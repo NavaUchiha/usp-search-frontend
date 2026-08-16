@@ -226,7 +226,10 @@ function SearchComponent() {
                 onChange={(e) => setSearchMode(e.target.value)}
               >
                 <FormControlLabel value="normal" control={<Radio />} label="Normal" />
-                <FormControlLabel value="semantic" control={<Radio />} label="Semantic" />
+                {/* Semantic mode hidden from UI (needs embed-service running).
+                    Flow left intact — MODE_PATH/searchSemantic + "semantic"
+                    handling remain; re-enable by uncommenting this line. */}
+                {/* <FormControlLabel value="semantic" control={<Radio />} label="Semantic" /> */}
                 <FormControlLabel value="poetry" control={<Radio />} label="Bhakthi Ganga" />
               </RadioGroup>
             </FormControl>
