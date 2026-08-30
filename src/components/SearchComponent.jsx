@@ -72,6 +72,9 @@ function SearchComponent() {
   const [error, setError] = React.useState(null);
   // "normal" | "semantic" | "poetry"
   const [searchMode, setSearchMode] = useState("normal");
+  // true from the moment a request is sent until the response lands — drives
+  // the MUI Skeleton placeholders shown in place of the (not-yet-arrived) cards.
+  const [loading, setLoading] = useState(false);
 
   const onSearchTextChangeHandler = (event) => {
     setSearchText(event.target.value);
@@ -109,6 +112,7 @@ function SearchComponent() {
   const fetchResults = async (mode) => {
     try {
       setError(null);
+      setLoading(true);
       // URL shape depends on APP_CONFIG.apiStyle (query for the PHP proxy,
       // path for the same-origin nginx / direct Spring). See buildSearchUrl.
       const searchUrl = buildSearchUrl(searchText, mode);
@@ -130,6 +134,9 @@ function SearchComponent() {
     } catch (err) {
       setError("Server is unreachable. Please contact administrator.");
       setListOfWrappedArticles([]);
+    } finally {
+      // Always clear loading — success or failure — so skeletons never stick.
+      setLoading(false);
     }
   };
   // Legacy mapper for the PHP-served BhaktiGanga endpoint — preserved for reference.
@@ -238,14 +245,34 @@ function SearchComponent() {
         <Stack justifyContent="center" alignItems="center" sx={{ mx: "5%" }}>
           {error && <div> {error}</div>}
           <Masonry columns={{ xs: 1, sm: 2, md: 3, lg: 3, xl: 3 }} spacing={3}>
-            {listOfWrappedArticles.map((wrappedArticle) => (
-              <ArticleCard
-                key={wrappedArticle.article.masterId}
-                article={wrappedArticle.article}
-                score={wrappedArticle.score}
-                highlight={wrappedArticle.highlight}
-              />
-            ))}
+            {loading
+              ? // Placeholder cards while the request is in flight. Varied
+                // heights mimic the masonry layout of real article cards.
+                Array.from({ length: 6 }).map((_, i) => (
+                  <Box key={`skeleton-${i}`}>
+                    <Skeleton
+                      variant="rounded"
+                      height={40}
+                      sx={{ mb: 1 }}
+                      animation="wave"
+                    />
+                    <Skeleton variant="text" animation="wave" />
+                    <Skeleton variant="text" animation="wave" />
+                    <Skeleton
+                      variant="text"
+                      width="60%"
+                      animation="wave"
+                    />
+                  </Box>
+                ))
+              : listOfWrappedArticles.map((wrappedArticle) => (
+                  <ArticleCard
+                    key={wrappedArticle.article.masterId}
+                    article={wrappedArticle.article}
+                    score={wrappedArticle.score}
+                    highlight={wrappedArticle.highlight}
+                  />
+                ))}
           </Masonry>
         </Stack>
       </Container>
